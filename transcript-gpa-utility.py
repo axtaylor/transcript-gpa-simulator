@@ -8,17 +8,15 @@ import numpy as np
 import re
 class TranscriptGPAUtility():
 
-    def exportResult(df: pd.DataFrame) -> pd.DataFrame:
-        return df.to_csv(index=False)
-    
     def plot(df: pd.DataFrame):
-        X, title = ("index", "Courses Counted Toward GPA (Simulated)") if "Index" not in df.columns else ("Index", "Courses Counted Toward GPA")
+        X, title = ("index", "Simulation Overview") if "Index" not in df.columns else ("Index", "Courses Counted Toward GPA")
         st.subheader(title)
         fig = px.scatter(df, x=X, y="Grade", hover_name="Course Name", labels={X: "Order of Transcript", "Grade": "Grade"}, color="Course Name")
-        fig.update_layout(height=550, xaxis_range=[-2, len(df[X])+5], yaxis_range=[-5, 105], yaxis_dtick = 10)
+        fig.update_layout(height=550, xaxis_range=[-1, len(df[X])], yaxis_range=[-5, 105], yaxis_dtick = 10)
         fig.update_traces(marker=dict(size=8)) 
+        fig.update_layout(showlegend=False)
         st.plotly_chart(fig)
-    
+
     def get_gpa(df: pd.DataFrame) -> float:
         if (df["Credits"] == 1).any():
             df["CalcGrd"] = df["Grade"]
@@ -28,26 +26,17 @@ class TranscriptGPAUtility():
             return round(grd/crd,4)
         else:
             return round(df['Grade'].mean(),4)
-        
+          
     def get_example() -> list[str]:
         return 
-    
     def validate_pdf(target: str) -> list[str]: 
-        def apply_regex(pdf: str) -> str:
-                return re.sub(r"","", pdf)
-        transcript, content = PdfReader(target), ""
-        for page in transcript.pages:
-            page_text = page.extract_text()
-            if page_text:
-                content += apply_regex(page_text)  
-        return content
-    
+        return
     def list_to_df(list: list[str]) -> pd.DataFrame:
         return
     def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         return
     def remove_replacements(df: pd.DataFrame) -> pd.DataFrame:
-        return df.sort_values(by="Index", ascending=True).reset_index().drop(columns=["Index", "index"])
+        return 
     def simulator(coursesDict: dict, df: pd.DataFrame, credits: list[int]) -> pd.DataFrame:
         return
 
@@ -78,11 +67,9 @@ class TrentUniversity(TranscriptGPAUtility):
     def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         df[["Course Code", "Course Name"]] = df["Course"].str.split(":", n=1, expand=True)
         df["Course Code"] = (df["Major"] +" "+ df["Course Code"]).str.replace(r'\s+', ' ', regex=True).str.strip()
-
         df.loc[df["Letter Grade"] == "R", ["Replaced", "Letter Grade"]] = ["R", None]
         df.loc[df["Grade"] == "PRE", "Grade"] = None
         df.loc[df["Replaced"] == "DEAN'S HONOUR ROLL", ["Replaced"]] = None
-
         df = df.dropna(subset=['Grade']).copy()
         df["Index"] = df.reset_index().index
         df['Grade'] = df['Grade'].astype(int)
@@ -152,13 +139,9 @@ def main():
             df_all_courses = institution_class.clean_dataframe(df_unprocessed)
             df_gpa_courses = institution_class.remove_replacements(df_all_courses)
             institution_class.plot(df_gpa_courses.reset_index(names="Index"))
-            st.subheader("Transcript Data Table - Courses Counted toward GPA")
-            if target is not None:
-                st.download_button(label="Export GPA Table", data=institution_class.exportResult(df_gpa_courses), file_name="transcript_gpa.csv")
             st.write(df_gpa_courses)
             if target is not None:
-                st.subheader("Transcript Data Table - Total Courses Completed")
-                st.download_button(label="Export Full Table", data=institution_class.exportResult(df_all_courses), file_name="transcript_full.csv")
+                st.subheader("Total Courses Completed")
                 st.write(df_all_courses.reset_index().drop(columns=["Index", "index"]))
             if "num_courses" not in st.session_state:
                 st.session_state.num_courses = 1
@@ -204,9 +187,6 @@ def main():
                             credits.append(credit)
                     df_simulation = institution_class.simulator(simulate_courses, df_gpa_courses, credits)
                     institution_class.plot(df_simulation.reset_index())
-                    st.subheader("Simulated Data Table")
-                    if target is not None:
-                        st.download_button(label="Export", data=institution_class.exportResult(df_simulation), file_name="simulation.csv")
                     st.write(df_simulation.sort_values(by="Grade", ascending=False))
                 except KeyError:
                     st.write("Please enter a course and grade to prompt a simulation.")     
