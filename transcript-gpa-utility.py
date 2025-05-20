@@ -6,15 +6,15 @@ from pypdf import PdfReader
 import pandas as pd
 import numpy as np
 import re
-class TranscriptGPAUtility():
 
+class TranscriptGPAUtility():
     def plot(df: pd.DataFrame):
         X, title = ("index", "Simulation Overview") if "Index" not in df.columns else ("Index", "Courses Counted Toward GPA")
-        st.subheader(title)
-        fig = px.scatter(df, x=X, y="Grade", hover_name="Course Name", labels={X: "Order of Transcript", "Grade": "Grade"}, color="Course Name")
-        fig.update_layout(height=550, xaxis_range=[-1, len(df[X])], yaxis_range=[-5, 105], yaxis_dtick = 10)
+        x_range = len(df[X])+1 if X == "Index" else len(df[X])+5 # Temporary code for increased plot visibility with replaced courses
+        st.subheader(title,help="Hover over any scatter point to display course information")
+        fig = px.scatter(df, x=X, y="Grade", hover_name="Course Name", labels={X: "Order on Transcript", "Grade": "Grade"}, color="Course Name")
+        fig.update_layout(height=550, xaxis_range=[-1, x_range], yaxis_range=[-5, 105], yaxis_dtick = 10, showlegend=False, xaxis=dict(showticklabels=False, ticks="", title=""))
         fig.update_traces(marker=dict(size=8)) 
-        fig.update_layout(showlegend=False)
         st.plotly_chart(fig)
 
     def get_gpa(df: pd.DataFrame) -> float:
@@ -83,8 +83,6 @@ class TrentUniversity(TranscriptGPAUtility):
     def remove_replacements(df: pd.DataFrame) -> pd.DataFrame:
         df = df.loc[df.groupby('Course Name')['Grade'].idxmax()]
         df = df.loc[df.groupby('Course Code')['Grade'].idxmax()]
-        st.markdown(f"##### Calculated GPA: **:blue-badge[{TrentUniversity.get_gpa(df)}]**")
-        st.markdown(f"##### Credits: **:green-badge[{df["Credits"].sum()}]**")
         return df.sort_values(by="Index", ascending=True).reset_index().drop(columns=["Index", "index"])
 
     def simulator(coursesDict: dict, df: pd.DataFrame, credits: list[int]) -> pd.DataFrame:
@@ -107,25 +105,25 @@ class TrentUniversity(TranscriptGPAUtility):
             sim_df = sim_df[sim_df["Course Name"] != courses]
         sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
 
-        st.markdown(f"##### Courses selected to replace: **{', '.join(remove)}**" if remove else "")
-        st.markdown(f"##### Courses selected to add: **{', '.join(adding)}**" if adding else "")
-        credits_difference = sim_df["Credits"].sum()-df["Credits"].sum()
-        gpa_difference = round(TrentUniversity.get_gpa(sim_df)-TrentUniversity.get_gpa(df),4)
-        gpa_sign = "+" if gpa_difference > 0 else ""
-        gpa_color = "grey-badge" if gpa_difference == 0 else ("green-badge" if gpa_difference > 0 else "red-badge")
-        st.markdown(f"##### Simulated GPA: **:blue-badge[{TrentUniversity.get_gpa(sim_df)}]**, Difference: **:{gpa_color}[{gpa_sign}{gpa_difference}]**")
-        credits_sign = "+" if credits_difference > 0 else ""
-        credits_color = "grey-badge" if credits_difference == 0 else "green-badge"
-        st.markdown(f"##### Credits: **:green-badge[{sim_df['Credits'].sum()}]**, Difference: **:{credits_color}[{credits_sign}{credits_difference}]**")
-        return sim_df.drop(columns=["Letter Grade", "Replaced", "Course"])
+        def simulation_info():
+            credits_difference, gpa_difference = (sim_df["Credits"].sum()-df["Credits"].sum(), round(TrentUniversity.get_gpa(sim_df)-TrentUniversity.get_gpa(df),4))
+            gpa_sign, gpa_color = ("+" if gpa_difference > 0 else "", "grey-badge" if gpa_difference == 0 else ("green-badge" if gpa_difference > 0 else "red-badge"))
+            credits_sign, credits_color = ("+" if credits_difference > 0 else "", "grey-badge" if credits_difference == 0 else "green-badge")
+            st.markdown(f"##### Courses selected to replace: **{', '.join(remove)}**" if remove else "")
+            st.markdown(f"##### Courses selected to add: **{', '.join(adding)}**" if adding else "")
+            st.markdown(f"##### Simulated GPA: **:blue-badge[{TrentUniversity.get_gpa(sim_df)}]**, Difference: **:{gpa_color}[{gpa_sign}{gpa_difference}]**",help="Total GPA after simulation")
+            st.markdown(f"##### Credits: **:green-badge[{sim_df['Credits'].sum()}]**, Difference: **:{credits_color}[{credits_sign}{credits_difference}]**",help="Total credits after simulation")
 
+        simulation_info()
+        return sim_df.drop(columns=["Letter Grade", "Replaced", "Course"])
+    
 def main():
     st.markdown("# Transcript GPA Utility - Manage GPA and Simulate Course Load")
     st.write("Upload a transcript and select an institution to begin. Your data will not be collected or redistributed.")
     col1, _ = st.columns([4,10])
     with col1:
         option = st.selectbox("Institution", ["Select an Institution", "Trent University"])
-    institution_class = TrentUniversity if option == "Trent University" else TranscriptGPAUtility
+    institution_class = TrentUniversity if option == "Trent University" else TranscriptGPAUtility # Temporary until additional institutions are supported
     content = institution_class.get_example()
     target = st.file_uploader("Upload Transcript", type=["pdf"]) 
     if option != "Select an Institution":
@@ -138,10 +136,14 @@ def main():
             df_unprocessed = institution_class.list_to_df(content)
             df_all_courses = institution_class.clean_dataframe(df_unprocessed)
             df_gpa_courses = institution_class.remove_replacements(df_all_courses)
+            st.markdown(f"##### Current GPA: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**")
+            st.markdown(f"##### Credits: **:green-badge[{df_gpa_courses["Credits"].sum()}]**")
             institution_class.plot(df_gpa_courses.reset_index(names="Index"))
             st.write(df_gpa_courses)
             if target is not None:
                 st.subheader("Total Courses Completed")
+                st.markdown(f"##### Overall Average: **:blue-badge[{institution_class.get_gpa(df_all_courses)}]**", help="The mean grade of every course you have completed")
+                st.markdown(f"##### Deviation from GPA: **:green-badge[{round(institution_class.get_gpa(df_gpa_courses)-institution_class.get_gpa(df_all_courses),4)}]**",help="The total GPA amount you have recovered by replacing courses")
                 st.write(df_all_courses.reset_index().drop(columns=["Index", "index"]))
             if "num_courses" not in st.session_state:
                 st.session_state.num_courses = 1
