@@ -9,11 +9,11 @@ import re
 
 class TranscriptGPAUtility():
     def plot(df: pd.DataFrame):
-        X, title = ("index", "Simulation Overview") if "Index" not in df.columns else ("Index", "Courses Counted Toward GPA")
-        x_range = len(df[X])+1 if X == "Index" else len(df[X])+5 # Temporary code for increased plot visibility with replaced courses
+        X, title = ("index", "Simulation Overview") if "Index" not in df.columns else ("Index", "Courses Counted Toward GPA") # Currently, the column name either "index" or "Index" determines if the data is coming from a simulation or not.
+        x_addition = 1 if X == "Index" else df["x_addition"][0] 
         st.subheader(title,help="Hover over any scatter point to display course information")
         fig = px.scatter(df, x=X, y="Grade", hover_name="Course Name", labels={X: "Order on Transcript", "Grade": "Grade"}, color="Course Name")
-        fig.update_layout(height=550, xaxis_range=[-1, x_range], yaxis_range=[-5, 105], yaxis_dtick = 10, showlegend=False, xaxis=dict(showticklabels=False, ticks="", title=""))
+        fig.update_layout(height=550, xaxis_range=[-1, len(df[X])+x_addition], yaxis_range=[-5, 105], yaxis_dtick = 10, showlegend=False, xaxis=dict(showticklabels=False, ticks="", title=""))
         fig.update_traces(marker=dict(size=8)) 
         st.plotly_chart(fig)
 
@@ -101,10 +101,12 @@ class TrentUniversity(TranscriptGPAUtility):
                 adding.append(course)
                 
         sim_df = pd.concat([df, pd.DataFrame(classes)], ignore_index=True)
-        for courses in remove:
-            sim_df = sim_df[sim_df["Course Name"] != courses]
-        sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
 
+        for i, courses in enumerate(remove, 1):
+            sim_df = sim_df[sim_df["Course Name"] != courses]
+            sim_df["x_addition"] = i
+
+        sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
         def simulation_info():
             credits_difference, gpa_difference = (sim_df["Credits"].sum()-df["Credits"].sum(), round(TrentUniversity.get_gpa(sim_df)-TrentUniversity.get_gpa(df),4))
             gpa_sign, gpa_color = ("+" if gpa_difference > 0 else "", "grey-badge" if gpa_difference == 0 else ("green-badge" if gpa_difference > 0 else "red-badge"))
@@ -189,7 +191,7 @@ def main():
                             credits.append(credit)
                     df_simulation = institution_class.simulator(simulate_courses, df_gpa_courses, credits)
                     institution_class.plot(df_simulation.reset_index())
-                    st.write(df_simulation.sort_values(by="Grade", ascending=False))
+                    st.write(df_simulation.sort_values(by="Grade", ascending=False).drop(columns=["x_addition"]))
                 except KeyError:
                     st.write("Please enter a course and grade to prompt a simulation.")     
         except ValueError:
