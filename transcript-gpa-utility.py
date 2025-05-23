@@ -96,6 +96,7 @@ class TrentUniversity(TranscriptGPAUtility):
                 adding.append(course)
 
         sim_df = pd.concat([df, pd.DataFrame(classes)], ignore_index=True)
+        sim_df["x_addition"] = 0
         for i, courses in enumerate(remove, 1):
             sim_df = sim_df[sim_df["Course Name"] != courses]
             sim_df["x_addition"] = i
