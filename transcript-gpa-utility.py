@@ -18,13 +18,12 @@ class TranscriptGPAUtility():
         st.plotly_chart(fig)
 
     def get_gpa(df: pd.DataFrame) -> float:
-        if (df["Credits"] == 1).any():
+        if (df["Credits"] == 1).any(): # If some courses are weighted as 1 and 0.5 credit
             df["CalcGrd"] = df["Grade"]
             df.loc[df["Credits"] == 1, ["CalcGrd"]] = df['CalcGrd']*2
-            grd = df['CalcGrd'].sum()
-            crd = df['Credits'].sum()*2
-            return round(grd/crd,4)
-        else:
+            adjusted_grade, adjusted_courses_complete = (df['CalcGrd'].sum(), df['Credits'].sum()*2)
+            return round(adjusted_grade/adjusted_courses_complete,4)
+        else: # If all the courses are evenly weighted
             return round(df['Grade'].mean(),4)
           
     def get_example() -> list[str]:
@@ -87,26 +86,22 @@ class TrentUniversity(TranscriptGPAUtility):
 
     def simulator(coursesDict: dict, df: pd.DataFrame, credits: list[int]) -> pd.DataFrame:
         classes, remove, adding = [], [], []
+
         for i, (course, grade) in enumerate(coursesDict.items(), 1):
-            row = {
-                'Course': course,
-                'Grade': grade,
-                'Credits': credits[i-1],
-                'Course Code': f"Simulation {i}",
-            }
+            row = {'Course': course, 'Grade': grade, 'Credits': credits[i-1], 'Course Code': f"Simulation {i}"}
             classes.append(row)
             if (df["Course Name"] == course).any():
                 remove.append(course)
             else:
                 adding.append(course)
-                
-        sim_df = pd.concat([df, pd.DataFrame(classes)], ignore_index=True)
 
+        sim_df = pd.concat([df, pd.DataFrame(classes)], ignore_index=True)
         for i, courses in enumerate(remove, 1):
             sim_df = sim_df[sim_df["Course Name"] != courses]
             sim_df["x_addition"] = i
 
         sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
+
         def simulation_info():
             credits_difference, gpa_difference = (sim_df["Credits"].sum()-df["Credits"].sum(), round(TrentUniversity.get_gpa(sim_df)-TrentUniversity.get_gpa(df),4))
             gpa_sign, gpa_color = ("+" if gpa_difference > 0 else "", "grey-badge" if gpa_difference == 0 else ("green-badge" if gpa_difference > 0 else "red-badge"))
