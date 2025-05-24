@@ -4,7 +4,7 @@ import pandas as pd
 from transcriptreader import TranscriptReader
 from transcriptreader import TrentUniversity
 st.set_page_config(layout="wide")
-#set_debug_mode = True
+set_debug_mode = True
 
 def plot(df: pd.DataFrame) -> None:
     # An index column named "sim" or "no_sim" (from main) determines plot type.
@@ -207,6 +207,16 @@ def main():
                     st.write(df_simulation.drop(columns=["x_addition"]))
                 except KeyError:
                     st.write("Please enter a course and grade to prompt a simulation.")
+            if set_debug_mode:
+                    views = {
+                        "---- \n\n## Debug Mode\n\n#### list_to_df() Result;": df_unprocessed,
+                        "#### clean_dataframe() (Prod. Grade) Result;": df_all_courses,
+                        "#### remove_replacements() (Prod. Grade) Result;": df_gpa_courses,
+                        "#### validate_pdf() Result;" : content,
+                    }
+                    for heading, view in views.items():
+                        st.markdown(heading)
+                        st.write(view)
         except ValueError:
             st.write(
                 "\nTranscript Read Error: Please verify that the provided transcript matches the selected University."
