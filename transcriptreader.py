@@ -20,7 +20,7 @@ class TranscriptReader:
 
     def remove_replacements(df: pd.DataFrame) -> pd.DataFrame:
         return
-    
+
     def get_gpa(df: pd.DataFrame) -> float:
         return
 
@@ -36,9 +36,8 @@ class TrentUniversity(TranscriptReader):
             pdf = re.sub(r"\n", " ", pdf)
             pdf = re.sub(r"\b\d{4}-\d{4}\s+Academic Year\b", "", pdf)
             pdf = re.sub(r"\b\d{4}\s+\w\w Summer Term\b", "", pdf)
-            return re.sub(
-                r"(?<=\s)(?= [A-Z][a-z]+(?: [A-Z][a-z]+)*)", "\n", pdf
-            )
+            return re.sub(r"(?<=\s)(?= [A-Z][a-z]+(?: [A-Z][a-z]+)*)", "\n", pdf)
+
         # Validate the transcript into a list[str] split by each line, parsed w/ regular ex.
         transcript, content = PdfReader(target), ""
         for page in transcript.pages:
@@ -61,7 +60,7 @@ class TrentUniversity(TranscriptReader):
             ":", n=1, expand=True
         )
         # Concatenate Major and Course Code
-        df["Course Code"] = (df["Major"] + " " + df["Course Code"])
+        df["Course Code"] = df["Major"] + " " + df["Course Code"]
         # If Letter Grade is "R" - course is not taken yet, fix "R" and assign grade as None
         df.loc[df["Letter Grade"] == "R", ["Replaced", "Letter Grade"]] = ["R", None]
         # If Grade is "PRE" - course is not taken yet, assign grade as None
@@ -102,11 +101,9 @@ class TrentUniversity(TranscriptReader):
         df = df.loc[df.groupby("Course Name")["Grade"].idxmax()]
         df = df.loc[df.groupby("Course Code")["Grade"].idxmax()]
         return df.sort_index().reset_index().drop(columns=["index"])
-    
+
     def get_gpa(df: pd.DataFrame) -> float:
-        if (
-            df["Credits"] == 1
-        ).any():  
+        if (df["Credits"] == 1).any():
             df["adj_grade"] = df["Grade"]
             df.loc[df["Credits"] == 1, ["adj_grade"]] = df["adj_grade"] * 2
             adjusted_grade, adjusted_courses_complete = (
@@ -114,5 +111,5 @@ class TrentUniversity(TranscriptReader):
                 df["Credits"].sum() * 2,
             )
             return round(adjusted_grade / adjusted_courses_complete, 4)
-        else:  
+        else:
             return round(df["Grade"].mean(), 4)
