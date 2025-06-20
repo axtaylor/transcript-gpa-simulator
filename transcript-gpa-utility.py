@@ -82,28 +82,30 @@ def simulator(
         "+" if credits_difference > 0 else "",
         "grey-badge" if credits_difference == 0 else "green-badge",
     )
+    st.markdown("## Forecast Summary")
     st.markdown(
-        f"##### Courses selected to replace: **{', '.join(remove)}**" if remove else ""
+        f"##### Replacing Courses: **{', '.join(remove)}**" if remove else "##### Replacing Courses: :grey-badge[None Selected]"
     )
     st.markdown(
-        f"##### Courses selected to add: **{', '.join(adding)}**" if adding else ""
+        f"##### Adding Courses: **{', '.join(adding)}**" if adding else "##### Adding Courses: :grey-badge[None Selected]"
     )
+    st.markdown("")
     st.markdown(
-        f"##### Simulated GPA: **:blue-badge[{institution_class.get_gpa(sim_df)}]**, Difference: **:{gpa_color}[{gpa_sign}{gpa_difference}]**",
+        f"##### Forecasted GPA: **:blue-badge[{institution_class.get_gpa(sim_df)}]**\n\n ##### **Deviation from Current GPA:** **:{gpa_color}[{gpa_sign}{gpa_difference}]**",
         help="Total GPA after simulation",
     )
     st.markdown(
-        f"##### Credits: **:green-badge[{sim_df['Credits'].sum()}]**, Difference: **:{credits_color}[{credits_sign}{credits_difference}]**",
+        f"##### Forecasted Total Credits: **:green-badge[{sim_df['Credits'].sum()}]**\n\n ##### **Credits Added:** **:{credits_color}[{credits_sign}{credits_difference}]**",
         help="Total credits after simulation",
     )
-
+    st.markdown("")
     return sim_df.drop(columns=["Letter Grade", "Replaced", "Course"])
 
 
 def main():
-    st.markdown("# Transcript GPA Utility - Manage GPA and Simulate Course Load")
-    st.write(
-        "Upload a transcript and select an institution to begin. Your data will not be collected or redistributed."
+    st.markdown("# Transcript Reader")
+    st.markdown(
+        "##### **Select an Institution to begin. Your transcript data will not be collected.**"
     )
     col1, _ = st.columns([4, 10])
     with col1:
@@ -119,7 +121,7 @@ def main():
         try:
             if target is not None:
                 content = institution_class.validate_pdf(target)
-                st.markdown(f"## Uploaded Transcript - {option}:")
+                st.markdown(f"## {option} Transcript Data:")
             else:
                 st.markdown(f"## Sample Transcript - {option}")
             df_unprocessed = institution_class.list_to_df(content)
@@ -127,25 +129,33 @@ def main():
             df_gpa_courses = institution_class.remove_replacements(
                 df_all_courses.copy()
             )
+            st.markdown("")
+            st.markdown("### Courses Counted Toward GPA")
             st.markdown(
-                f"##### Current GPA: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**"
+                f"##### **Grade Point Average (GPA)**: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**"
             )
             st.markdown(
-                f"##### Credits: **:green-badge[{df_gpa_courses['Credits'].sum()}]**"
+                f"##### **Total Credits Earned**: **:green-badge[{df_gpa_courses['Credits'].sum()}]**"
             )
-            plot(df_gpa_courses.reset_index(names="no_sim"))
-            st.write(df_gpa_courses)
+            with st.expander("Chart"):
+                plot(df_gpa_courses.reset_index(names="no_sim"))
+            with st.expander("Data Table"):
+                st.subheader("Courses Counted Toward GPA")
+                st.write(df_gpa_courses)
             if target is not None:
+                st.markdown("")
                 st.subheader("Total Courses Completed")
                 st.markdown(
                     f"##### Overall Average: **:blue-badge[{institution_class.get_gpa(df_all_courses)}]**",
-                    help="The mean grade of every course you have completed",
+                    help="The average grade of every course you have completed",
                 )
                 st.markdown(
                     f"##### Deviation from GPA: **:green-badge[{(institution_class.get_gpa(df_gpa_courses) - institution_class.get_gpa(df_all_courses)):.4f}]**",
                     help="The total GPA amount you have recovered by replacing courses",
                 )
-                st.write(df_all_courses)
+                with st.expander("Data Table"):
+                    st.subheader("Total Courses Completed")
+                    st.write(df_all_courses)
             if "num_courses" not in st.session_state:
                 st.session_state.num_courses = 1
             if st.session_state.num_courses == 0:
@@ -165,19 +175,21 @@ def main():
                 else:
                     clear_all()
 
+            st.markdown("")
             st.markdown(
-                "## Course Addition and Replacement Simulator",
-                help="Notice: If you are replacing a course, verify that the your input matches the course name on your transcript.",
+                "## GPA Forecasting Utility",
+                help="Course Name: The name of the course you are intending to add or replace (see the \"Course Name\" column in the data table).\n\nAnticipated Grade: The final grade you are expecting to receive for this course.\n\nCredits: O.5 for half credit \"H\" courses (1 semester), 1 for full credit \"Y\" courses (2 semesters).",
             )
+            st.markdown("##### **Enter the information for courses you intend to add or replace in the menu below. Select the Forecast button to return the forecasted GPA**")
             st.button("**+**", on_click=add_course)
             st.button("**–**", on_click=delete_course)
             with st.form(key="row", border=True):
                 for i in range(st.session_state.num_courses):
                     space = "‎\n\n"
                     header1, header2, header3 = (
-                        (f"{space}Course Name", f"{space}Grade", f"{space}Credits")
+                        (f"{space}Course Name", f"{space}Anticipated Grade", f"{space}Credits")
                         if i == 0
-                        else ("Course Name", "Grade", "Credits")
+                        else ("Course Name", "Anticipated Grade", "Credits")
                     )
                     col1, col2, col3 = st.columns(3)
                     with col1:
@@ -199,7 +211,7 @@ def main():
                             key=f"credit_{i}",
                         )
                     st.write("___")
-                submit = st.form_submit_button("Simulate")
+                submit = st.form_submit_button("Forecast")
             if submit:
                 try:
                     simulate_courses, credits = {}, []
@@ -213,8 +225,11 @@ def main():
                     df_simulation = simulator(
                         simulate_courses, df_gpa_courses, credits, institution_class
                     )
-                    plot(df_simulation.reset_index(names="sim"))
-                    st.write(df_simulation.drop(columns=["x_addition"]))
+                    with st.expander("Chart"):
+                        plot(df_simulation.reset_index(names="sim"))
+                    with st.expander("Data Table"):
+                        st.subheader("Courses Counted Toward GPA")
+                        st.write(df_simulation.drop(columns=["x_addition"]))
                 except KeyError:
                     st.write("Please enter a course and grade to prompt a simulation.")
             if set_debug_mode:
