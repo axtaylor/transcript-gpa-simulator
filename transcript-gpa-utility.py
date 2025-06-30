@@ -13,7 +13,7 @@ def plot(df: pd.DataFrame) -> None:
     X, title = (
         ("no_sim", "Courses Counted Toward GPA")
         if "sim" not in df.columns
-        else ("sim", "Simulation Overview")
+        else ("sim", "Forecast Summary")
     )
     st.subheader(
         title, help="Hover over any scatter point to display course information"
@@ -91,12 +91,10 @@ def simulator(
     )
     st.markdown("")
     st.markdown(
-        f"##### Forecasted GPA: **:blue-badge[{institution_class.get_gpa(sim_df)}]**\n\n ##### **Deviation from Current GPA:** **:{gpa_color}[{gpa_sign}{gpa_difference}]**",
-        help="Total GPA after simulation",
+        f"##### Forecasted GPA: **:blue-badge[{institution_class.get_gpa(sim_df)}]**\n\n ##### **Change in GPA:** **:{gpa_color}[{gpa_sign}{gpa_difference}]**"
     )
     st.markdown(
-        f"##### Forecasted Total Credits: **:green-badge[{sim_df['Credits'].sum()}]**\n\n ##### **Credits Added:** **:{credits_color}[{credits_sign}{credits_difference}]**",
-        help="Total credits after simulation",
+        f"##### Total Credits After Completion: **:green-badge[{sim_df['Credits'].sum()}]**\n\n ##### **Credits Added:** **:{credits_color}[{credits_sign}{credits_difference}]**"
     )
     st.markdown("")
     return sim_df.drop(columns=["Letter Grade", "Replaced", "Course"])
@@ -177,10 +175,10 @@ def main():
 
             st.markdown("")
             st.markdown(
-                "## GPA Forecasting Utility",
+                "## GPA Forecasting",
                 help="Course Name: The name of the course you are intending to add or replace (see the \"Course Name\" column in the data table).\n\nAnticipated Grade: The final grade you are expecting to receive for this course.\n\nCredits: O.5 for half credit \"H\" courses (1 semester), 1 for full credit \"Y\" courses (2 semesters).",
             )
-            st.markdown("##### **Enter the information for courses you intend to add or replace in the menu below. Select the Forecast button to return the forecasted GPA**")
+            st.markdown("##### **Enter the information for courses you intend to add or replace in the menu below. Select the Forecast button to return a summary.**")
             st.button("**+**", on_click=add_course)
             st.button("**–**", on_click=delete_course)
             with st.form(key="row", border=True):
@@ -231,7 +229,7 @@ def main():
                         st.subheader("Courses Counted Toward GPA")
                         st.write(df_simulation.drop(columns=["x_addition"]))
                 except KeyError:
-                    st.write("Please enter a course and grade to prompt a simulation.")
+                    st.write("Enter information for at least one (1) course to prompt a forecast.")
             if set_debug_mode:
                 views = {
                     "---- \n\n## Debug Mode\n\n#### list_to_df() Result;": df_unprocessed,
