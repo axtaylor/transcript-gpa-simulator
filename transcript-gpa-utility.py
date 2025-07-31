@@ -62,32 +62,32 @@ def plot_distribution(df: pd.DataFrame, chart_id: str = "null") -> None:
 
 
 def simulator(
-    coursesDict: dict,
     df: pd.DataFrame,
-    credits: list[int],
+    courses: list[str],
+    credits: list[float],
+    grades: list[int],
     institution_class: TranscriptReader,
 ) -> pd.DataFrame:
     classes, remove, adding = [], [], []
 
-    for i, (course, grade) in enumerate(coursesDict.items(), 1):
+    for i, (course, grade, credit) in enumerate(zip(courses, grades, credits), 0):
         row = {
             "Course": course,
             "Grade": grade,
-            "Credits": credits[i - 1],
-            "Course Code": f"Simulation {i}",
+            "Credits": credit,
+            "Course Code": f"Simulation {i+1}",
         }
-
         classes.append(row)
         if (df["Course Name"] == course).any():
             remove.append(course)
         else:
             adding.append(course)
-
+    
     sim_df = pd.concat([df, pd.DataFrame(classes)], ignore_index=True)
     sim_df["x_addition"] = 0
 
-    for i, courses in enumerate(remove, 1):
-        sim_df = sim_df[sim_df["Course Name"] != courses]
+    for i, c in enumerate(remove, 1):
+        sim_df = sim_df[sim_df["Course Name"] != c]
         sim_df["x_addition"][0] = i
     sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
 
@@ -241,16 +241,17 @@ def main():
                 submit = st.form_submit_button("Forecast")
             if submit:
                 try:
-                    simulate_courses, credits = {}, []
+                    courses, credits, grades = [], [], []
                     for i in range(st.session_state.num_courses):
                         course = st.session_state.get(f"course_{i}", "").strip()
                         grade = st.session_state.get(f"grade_{i}", None)
                         credit = st.session_state.get(f"credit_{i}", None)
                         if course:
-                            simulate_courses[course] = grade
+                            courses.append(course)
                             credits.append(credit)
+                            grades.append(grade)
                     df_simulation = simulator(
-                        simulate_courses, df_gpa_courses, credits, institution_class
+                        df_gpa_courses, courses, credits, grades, institution_class
                     )
                     with st.expander("Chart"):
                         plot(df_simulation.reset_index(names="sim"), "sim")
