@@ -1,21 +1,20 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+import numpy as np
 from transcriptreader import TranscriptReader
 from transcriptreader import TrentUniversity
 
 st.set_page_config(layout="wide")
 set_debug_mode = False
 
-
-def plot(df: pd.DataFrame) -> None:
-    # An index column named "sim" or "no_sim" (from main) determines plot type.
+def plot(df: pd.DataFrame, chart_id: str = "null") -> None:
     X, title = (
-        ("no_sim", "Courses Counted Toward GPA")
-        if "sim" not in df.columns
-        else ("sim", "Forecast Summary")
+        ("sim", "#### Forecast Summary")
+        if chart_id=="sim"
+        else ("no_sim", "#### Courses Counted Toward GPA")
     )
-    st.subheader(
+    st.markdown(
         title, help="Hover over any scatter point to display course information"
     )
     fig = px.scatter(
@@ -35,7 +34,31 @@ def plot(df: pd.DataFrame) -> None:
         xaxis=dict(showticklabels=False, ticks="", title=""),
     )
     fig.update_traces(marker=dict(size=8))
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, key=f"{chart_id}")
+
+def plot_distribution(df: pd.DataFrame, chart_id: str = "null") -> None:
+    option = "GPA Weighted" if chart_id=="gpadist" else "GPA Forecasted" if chart_id=="simdist" else "Total"
+    st.markdown(f"#### Distribution of {option} Course Grades")
+    st.markdown(f"Mean Grade: **{TrentUniversity.get_gpa(df):.2f}**")
+    intervals, grade = np.linspace(-1e-10, 100, 21), df["Grade"]
+    dist = pd.cut(grade,
+                  bins=intervals,
+                  ).value_counts(
+                  ).sort_index(
+                  ).reset_index(
+                  ).astype(str)
+    dist.columns=["Grade", "Count"]
+
+    fig = px.bar(
+        dist,
+        x="Grade",
+        y="Count",
+    )
+    fig.update_layout(
+    yaxis_range=[0, dist.max()],
+    yaxis_dtick=1,
+    )
+    st.plotly_chart(fig, key=f"{chart_id}")
 
 
 def simulator(
@@ -103,57 +126,63 @@ def simulator(
 def main():
     st.markdown("# Transcript Reader")
     st.markdown(
-        "##### **Select an Institution to begin. Your transcript data will not be collected.**"
+        "##### **Select an Institution to begin. Your data will not be collected.**"
     )
     col1, _ = st.columns([4, 10])
     with col1:
         option = st.selectbox(
-            "Institution", ["Select an Institution", "Trent University"]
+            "Select your institution", ["Select an Institution", "Trent University"]
         )
     institution_class = (
         TrentUniversity if option == "Trent University" else TranscriptReader
     )  # Temporary until additional institutions are supported
     content = institution_class.get_example()
-    target = st.file_uploader("Upload Transcript", type=["pdf"])
+    target = st.file_uploader("Upload your transcript or select an institution for a preview.", type=["pdf"])
     if option != "Select an Institution":
         try:
             if target is not None:
                 content = institution_class.validate_pdf(target)
-                st.markdown(f"## {option} Transcript Data:")
+                st.markdown(f"## Uploaded: {option} Transcript")
             else:
-                st.markdown(f"## Sample Transcript - {option}")
+                st.markdown(f"## Preview for a {option} Transcript")
             df_unprocessed = institution_class.list_to_df(content)
             df_all_courses = institution_class.clean_dataframe(df_unprocessed.copy())
             df_gpa_courses = institution_class.remove_replacements(
                 df_all_courses.copy()
             )
             st.markdown("")
-            st.markdown("### Courses Counted Toward GPA")
+            st.markdown("### Courses Counted for GPA")
             st.markdown(
-                f"##### **Grade Point Average (GPA)**: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**"
+                f"##### **Grade Point Average (GPA)**: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**",
+                help=f"Includes only courses that count toward your {option} GPA"
             )
             st.markdown(
                 f"##### **Total Credits Earned**: **:green-badge[{df_gpa_courses['Credits'].sum()}]**"
             )
             with st.expander("Chart"):
-                plot(df_gpa_courses.reset_index(names="no_sim"))
-            with st.expander("Data Table"):
-                st.subheader("Courses Counted Toward GPA")
+                plot(df_gpa_courses.reset_index(names="no_sim"), "gpaplot")
+            with st.expander("Table"):
+                st.markdown("#### GPA Course Data Table")
                 st.write(df_gpa_courses)
+            with st.expander("Distribution"):
+                plot_distribution(df_gpa_courses,"gpadist")
+
             if target is not None:
                 st.markdown("")
                 st.subheader("Total Courses Completed")
                 st.markdown(
                     f"##### Overall Average: **:blue-badge[{institution_class.get_gpa(df_all_courses)}]**",
-                    help="The average grade of every course you have completed",
+                    help="The average grade of every course you have completed, including duplicate and failed courses.",
                 )
                 st.markdown(
-                    f"##### Deviation from GPA: **:green-badge[{(institution_class.get_gpa(df_gpa_courses) - institution_class.get_gpa(df_all_courses)):.4f}]**",
-                    help="The total GPA amount you have recovered by replacing courses",
+                    f"##### Difference from GPA: **:green-badge[{(institution_class.get_gpa(df_gpa_courses) - institution_class.get_gpa(df_all_courses)):.4f}]**",
+                    help="The % increase in GPA by replacing courses",
                 )
-                with st.expander("Data Table"):
-                    st.subheader("Total Courses Completed")
+                with st.expander("Table"):
+                    st.markdown("#### Total Courses Completed")
                     st.write(df_all_courses)
+                with st.expander("Distribution"):
+                    plot_distribution(df_all_courses,"totaldist")
             if "num_courses" not in st.session_state:
                 st.session_state.num_courses = 1
             if st.session_state.num_courses == 0:
@@ -178,7 +207,7 @@ def main():
                 "## GPA Forecasting",
                 help="Course Name: The name of the course you are intending to add or replace (see the \"Course Name\" column in the data table).\n\nAnticipated Grade: The final grade you are expecting to receive for this course.\n\nCredits: O.5 for half credit \"H\" courses (1 semester), 1 for full credit \"Y\" courses (2 semesters).",
             )
-            st.markdown("##### **Enter the information for courses you intend to add or replace in the menu below. Select the Forecast button to return a summary.**")
+            st.markdown("##### **Enter your course details below to forecast your GPA**")
             st.button("**+**", on_click=add_course)
             st.button("**–**", on_click=delete_course)
             with st.form(key="row", border=True):
@@ -224,10 +253,12 @@ def main():
                         simulate_courses, df_gpa_courses, credits, institution_class
                     )
                     with st.expander("Chart"):
-                        plot(df_simulation.reset_index(names="sim"))
-                    with st.expander("Data Table"):
-                        st.subheader("Courses Counted Toward GPA")
+                        plot(df_simulation.reset_index(names="sim"), "sim")
+                    with st.expander("Table"):
+                        st.markdown("#### Forecasted Courses (GPA)")
                         st.write(df_simulation.drop(columns=["x_addition"]))
+                    with st.expander("Distribution"):
+                        plot_distribution(df_simulation, "simdist")
                 except KeyError:
                     st.write("Enter information for at least one (1) course to prompt a forecast.")
             if set_debug_mode:
@@ -244,7 +275,6 @@ def main():
             st.write(
                 "\nTranscript Read Error: Please verify that the provided transcript matches the selected University."
             )
-
 
 if __name__ == "__main__":
     main()
