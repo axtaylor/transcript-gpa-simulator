@@ -128,7 +128,7 @@ class TrentUniversity(TranscriptReader):
             )
             return round(adjusted_grade / adjusted_courses_complete, 4)
         else:
-            return round(df["Grade"].mean(), 4)
+            return round(df["Grade"].mean(), 2)
         
     def get_gpa(input: pd.DataFrame) -> str:
         input["GPA"] = TranscriptReader.gpa_conversion(TrentUniversity.scale(), input["Grade"])

@@ -155,14 +155,14 @@ def main():
                 content = institution_class.validate_pdf(target)
                 st.markdown(f"## {option} Transcript Summary")
             else:
-                st.markdown(f"## Preview: {option} Transcript")
+                st.markdown(f"## {option} Transcript Preview")
             df_unprocessed = institution_class.list_to_df(content)
             df_all_courses = institution_class.clean_dataframe(df_unprocessed.copy())
             df_gpa_courses = institution_class.remove_replacements(
                 df_all_courses.copy()
             )
             st.markdown("")
-            st.markdown("### Courses Counted toward GPA")
+            st.markdown("### GPA Information")
             st.markdown(
                 f"##### **GPA (Grade Point Average)**: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**",
                 help=f"Measured in accordance to the {option} GPA conversion scale based on individual course results.\n\n  https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table"
@@ -225,6 +225,7 @@ def main():
                 help="Course Name: The name of the course you are intending to add or replace (see the \"Course Name\" column in the data table).\n\nAnticipated Grade: The final grade you are expecting to receive for this course.\n\nCredits: O.5 for half credit \"H\" courses (1 semester), 1 for full credit \"Y\" courses (2 semesters).",
             )
             st.markdown("##### **Enter your course details below to forecast your GPA**")
+            st.write("")
             st.button("**+**", on_click=add_course)
             st.button("**–**", on_click=delete_course)
             with st.form(key="row", border=True):

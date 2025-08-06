@@ -6,13 +6,18 @@ enableStaticServing = true
 
 [[theme.fontFaces]]
 family="Inter"
-url="transcript-gpa-simulator/static/Inter-Regular.ttf"
+url="transcript-gpa-simulator/static/InterVariable.ttf"
 style="normal"
 weight=400
+[[theme.fontFaces]]
+family="Inter"
+url="transcript-gpa-simulator/static/Inter-Bold.ttf"
+style="normal"
+weight=700
 
 [theme]
 base="dark"
-font="Inter"
+font="Inter, sans-serif"
 primaryColor = "#00B0EE"
 backgroundColor = "#111111"
 secondaryBackgroundColor = "#292828"
