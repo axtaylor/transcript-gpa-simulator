@@ -1,0 +1,18 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+enableStaticServing = true
+
+[[theme.fontFaces]]
+family="Inter"
+url="transcript-gpa-simulator/static/Inter-Regular.ttf"
+style="normal"
+weight=400
+
+[theme]
+base="dark"
+font="Inter"
+primaryColor = "#00B0EE"
+backgroundColor = "#111111"
+secondaryBackgroundColor = "#292828"

@@ -130,7 +130,7 @@ class TrentUniversity(TranscriptReader):
         else:
             return round(df["Grade"].mean(), 4)
         
-    def get_gpa(input: pd.DataFrame) -> float:
+    def get_gpa(input: pd.DataFrame) -> str:
         input["GPA"] = TranscriptReader.gpa_conversion(TrentUniversity.scale(), input["Grade"])
         df = input.copy()
         if (df["Credits"] == 1).any():

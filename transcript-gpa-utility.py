@@ -5,7 +5,10 @@ import numpy as np
 from transcriptreader import TranscriptReader
 from transcriptreader import TrentUniversity
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                   page_title="Transcript Reader",
+                   page_icon="📚")
+
 set_debug_mode = False
 
 def plot(df: pd.DataFrame, chart_id: str = "null") -> None:
@@ -62,6 +65,7 @@ def plot_distribution(
     yaxis_range=[0, dist.max()],
     yaxis_dtick=1,
     )
+    fig.update_traces(marker_color='#00B0EE')
     st.plotly_chart(fig, key=f"{chart_id}")
 
 
@@ -132,9 +136,7 @@ def simulator(
 
 def main():
     st.markdown("# Transcript Reader")
-    st.markdown(
-        "##### **Select an Institution to begin. Your data will not be collected.**"
-    )
+    st.write("")
     col1, _ = st.columns([4, 10])
     with col1:
         option = st.selectbox(
@@ -143,13 +145,15 @@ def main():
     institution_class = (
         TrentUniversity if option == "Trent University" else TranscriptReader
     )  # Temporary until additional institutions are supported
+    st.write("")
     content = institution_class.get_example()
     target = st.file_uploader("Upload your transcript or select an institution for a preview.", type=["pdf"])
+    st.write("___")
     if option != "Select an Institution":
         try:
             if target is not None:
                 content = institution_class.validate_pdf(target)
-                st.markdown(f"## Uploaded: {option} Transcript")
+                st.markdown(f"## {option} Transcript Summary")
             else:
                 st.markdown(f"## Preview: {option} Transcript")
             df_unprocessed = institution_class.list_to_df(content)
@@ -170,6 +174,7 @@ def main():
             st.markdown(
                 f"##### **Total Credits Earned**: **:green-badge[{df_gpa_courses['Credits'].sum()}]**"
             )
+            st.write("")
             with st.expander("Chart"):
                 plot(df_gpa_courses.reset_index(names="no_sim"), "gpaplot")
             with st.expander("Table"):
@@ -189,6 +194,7 @@ def main():
                     f"##### Difference: **:green-badge[{(institution_class.get_average(df_gpa_courses) - institution_class.get_average(df_all_courses)):.4f}]**",
                     help="The % increase in GPA by replacing courses",
                 )
+                st.write("")
                 with st.expander("Table"):
                     st.markdown("#### Total Courses Completed")
                     st.write(df_all_courses)
@@ -213,7 +219,7 @@ def main():
                 else:
                     clear_all()
 
-            st.markdown("")
+            st.write("___")
             st.markdown(
                 "## GPA Forecasting",
                 help="Course Name: The name of the course you are intending to add or replace (see the \"Course Name\" column in the data table).\n\nAnticipated Grade: The final grade you are expecting to receive for this course.\n\nCredits: O.5 for half credit \"H\" courses (1 semester), 1 for full credit \"Y\" courses (2 semesters).",
