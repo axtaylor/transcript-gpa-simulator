@@ -230,16 +230,17 @@ def main():
             st.button("**–**", on_click=delete_course)
             with st.form(key="row", border=True):
                 for i in range(st.session_state.num_courses):
-                    space = "‎\n\n"
                     header1, header2, header3 = (
-                        (f"{space}Course Name", f"{space}Anticipated Grade", f"{space}Credits")
+                        ("Course Name", "Anticipated Grade", "Credits")
                         if i == 0
                         else ("Course Name", "Anticipated Grade", "Credits")
                     )
                     col1, col2, col3 = st.columns(3)
                     with col1:
+                        st.write("")
                         st.text_input(f"{header1}", key=f"course_{i}")
                     with col2:
+                        st.write("")
                         st.number_input(
                             f"{header2}",
                             min_value=0,
@@ -248,6 +249,7 @@ def main():
                             key=f"grade_{i}",
                         )
                     with col3:
+                        st.write("")
                         st.number_input(
                             f"{header3}",
                             min_value=0.5,
