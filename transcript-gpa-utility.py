@@ -9,7 +9,7 @@ st.set_page_config(layout="wide",
                    page_title="Transcript Reader",
                    page_icon="📚")
 
-set_debug_mode = False
+set_debug_mode =  False
 
 def plot(df: pd.DataFrame, chart_id: str = "null") -> None:
     X, title = (
@@ -99,19 +99,9 @@ def simulator(
         sim_df["x_addition"][0] = i
     sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
 
-    credits_difference, gpa_difference = (
+    credits_difference, grd_difference = (
         sim_df["Credits"].sum() - df["Credits"].sum(),
         round(institution_class.get_average(sim_df) - institution_class.get_average(df), 4),
-    )
-    gpa_sign, gpa_color = (
-        "+" if gpa_difference > 0 else "",
-        "grey-badge"
-        if gpa_difference == 0
-        else ("green-badge" if gpa_difference > 0 else "red-badge"),
-    )
-    credits_sign, credits_color = (
-        "+" if credits_difference > 0 else "",
-        "grey-badge" if credits_difference == 0 else "green-badge",
     )
     st.markdown("## Forecast Summary")
     st.markdown(
@@ -121,15 +111,15 @@ def simulator(
         f"##### Adding Courses: **{', '.join(adding)}**" if adding else "##### Adding Courses: :grey-badge[None Selected]"
     )
     st.markdown("")
-    st.markdown(
-        f"##### **Forecasted GPA (Grade Point Average)**: **:blue-badge[{institution_class.get_gpa(sim_df)}]**",
-    )
-    st.markdown(
-        f"##### Forecasted Average Grade: **:blue-badge[{institution_class.get_average(sim_df)}]**\n\n ##### **Change in Average Grade:** **:{gpa_color}[{gpa_sign}{gpa_difference}]**"
-    )
-    st.markdown(
-        f"##### Total Credits After Completion: **:green-badge[{sim_df['Credits'].sum()}]**\n\n ##### **Credits Added:** **:{credits_color}[{credits_sign}{credits_difference}]**"
-    )
+
+    col1, col2, col3, _ = st.columns(4)
+    with col1:
+        st.metric("Forecasted Grade Point Average (GPA)", institution_class.get_gpa(sim_df), delta=round(institution_class.get_gpa(sim_df) - institution_class.get_gpa(df), 4), border=True)
+    with col2:
+        st.metric("Forecasted Average Grade", f"{institution_class.get_average(sim_df)}%", delta=grd_difference,border=True)
+    with col3:
+        st.metric("Total Credits Upon Completion", sim_df['Credits'].sum(), delta=credits_difference, border=True)
+
     st.markdown("")
     return sim_df.drop(columns=["Letter Grade", "Course"])
 
@@ -163,17 +153,13 @@ def main():
             )
             st.markdown("")
             st.markdown("### GPA Information")
-            st.markdown(
-                f"##### **GPA (Grade Point Average)**: **:blue-badge[{institution_class.get_gpa(df_gpa_courses)}]**",
-                help=f"Measured in accordance to the {option} GPA conversion scale based on individual course results.\n\n  https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table"
-            )
-            st.markdown(
-                f"##### **Average Grade**: **:blue-badge[{institution_class.get_average(df_gpa_courses)}]**",
-                help=f"Includes only courses that count toward your {option} GPA"
-            )
-            st.markdown(
-                f"##### **Total Credits Earned**: **:green-badge[{df_gpa_courses['Credits'].sum()}]**"
-            )
+            col1, col2, col3, _, _ = st.columns(5)
+            with col1:
+                st.metric("Grade Point Average (GPA)", institution_class.get_gpa(df_gpa_courses), border=True)
+            with col2:
+                st.metric("Average Grade", f"{institution_class.get_average(df_gpa_courses)}%", border=True)
+            with col3:
+                st.metric("Total Credits Earned", df_gpa_courses['Credits'].sum(), border=True)
             st.write("")
             with st.expander("Chart"):
                 plot(df_gpa_courses.reset_index(names="no_sim"), "gpaplot")
@@ -186,14 +172,14 @@ def main():
             if target is not None:
                 st.markdown("")
                 st.subheader("Total Courses Completed")
-                st.markdown(
-                    f"##### Overall Average: **:blue-badge[{institution_class.get_average(df_all_courses)}]**",
-                    help="The average grade of every course you have completed, including duplicate and failed courses.",
-                )
-                st.markdown(
-                    f"##### Difference: **:green-badge[{(institution_class.get_average(df_gpa_courses) - institution_class.get_average(df_all_courses)):.4f}]**",
-                    help="The % increase in GPA by replacing courses",
-                )
+                col1, _, _, _, _ = st.columns(5)
+                with col1:
+                    st.metric("Overall Average Grade",
+                              f"{institution_class.get_average(df_all_courses)}%",
+                              delta=round(-(institution_class.get_average(df_gpa_courses) - institution_class.get_average(df_all_courses)),2),
+                              delta_color="inverse",
+                              border=True
+                    )
                 st.write("")
                 with st.expander("Table"):
                     st.markdown("#### Total Courses Completed")
@@ -281,7 +267,7 @@ def main():
                     with st.expander("Distribution"):
                         plot_distribution(df_simulation, "simdist", institution_class)
                 except KeyError:
-                    st.write("Enter information for at least one (1) course to prompt a forecast.")
+                    st.write("Enter information for at least one course to prompt a forecast.")
             if set_debug_mode:
                 views = {
                     "---- \n\n## Debug Mode\n\n#### list_to_df() Result;": df_unprocessed,

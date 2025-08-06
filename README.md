@@ -5,12 +5,11 @@
 
 University transcript parser. Returns data visualizations, datasets, and a transcript forecasting GUI.
 
-GPA calculations are based the [OSMAS](https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table) scale.
+GPA calculations are based on the [OSMAS](https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table) scale.
 
 ## Supported Institutions
 
 - **Trent University**, Unofficial Transcript
-
 
 
 ## Features
@@ -31,10 +30,10 @@ GPA calculations are based the [OSMAS](https://www.ouac.on.ca/guide/undergraduat
 - This application does not store any data remotely. 
 
 
-## Replacing Courses
+## Renamed Courses
 
 - Institutions may rename courses over time, ex, "MATH 1110 - Calculus $\boxed{\small{I}}$" and "MATH 1110 - Calculus $\boxed{\small{1}}$". 
 
 - If you have retaken a course that your institution has renamed,
-and the course is incorrectly counted toward your GPA on the app, please contact the developer with the course information.
+and the course is incorrectly counted toward your GPA on the app, contact the developer with the course information.
 
