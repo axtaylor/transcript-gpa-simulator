@@ -5,12 +5,6 @@ import numpy as np
 from transcriptreader import TranscriptReader
 from transcriptreader import TrentUniversity
 
-st.set_page_config(layout="wide",
-                   page_title="Transcript Reader",
-                   page_icon="📚")
-
-set_debug_mode =  False
-
 def plot(df: pd.DataFrame, chart_id: str = "null") -> None:
     X, title = (
         ("sim", "#### Forecast Summary")
@@ -96,7 +90,7 @@ def simulator(
 
     for i, c in enumerate(remove, 1):
         sim_df = sim_df[sim_df["Course Name"] != c]
-        sim_df["x_addition"][0] = i
+        sim_df.loc[0, "x_addition"] = i
     sim_df.loc[sim_df["Course Name"].isna(), "Course Name"] = sim_df["Course"]
 
     credits_difference, grd_difference = (
@@ -112,7 +106,7 @@ def simulator(
     )
     st.markdown("")
 
-    col1, col2, col3, _ = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Forecasted Grade Point Average (GPA)", institution_class.get_gpa(sim_df), delta=round(institution_class.get_gpa(sim_df) - institution_class.get_gpa(df), 4), border=True)
     with col2:
@@ -284,4 +278,19 @@ def main():
             )
 
 if __name__ == "__main__":
+    
+    hide_streamlit_style = """
+            <style>
+            [data-testid="stToolbar"] {visibility: hidden !important;}
+            footer {visibility: hidden !important;}
+            </style>
+            """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+    st.set_page_config(layout="wide",
+                   page_title="Transcript Reader",
+                   page_icon="📚")
+
+    set_debug_mode = False
+
     main()
