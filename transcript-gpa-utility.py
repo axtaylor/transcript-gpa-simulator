@@ -297,7 +297,6 @@ if __name__ == "__main__":
     <style>
            .block-container {
                padding-top: 0rem;
-               padding-bottom: 3rem;
             }
     </style>
     """, unsafe_allow_html=True)
