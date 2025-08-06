@@ -278,7 +278,7 @@ def main():
             )
 
 if __name__ == "__main__":
-    
+
     hide_streamlit_style = """
             <style>
             [data-testid="stToolbar"] {visibility: hidden !important;}
@@ -292,5 +292,14 @@ if __name__ == "__main__":
                    page_icon="📚")
 
     set_debug_mode = False
+
+    st.markdown("""
+    <style>
+           .block-container {
+               padding-top: 0rem;
+               padding-bottom: 3rem;
+            }
+    </style>
+    """, unsafe_allow_html=True)
 
     main()
