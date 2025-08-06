@@ -1,12 +1,41 @@
 # Transcript GPA Simulator
 
-Web Application: [https://transcript-gpa-simulator.streamlit.app/](https://transcript-gpa-simulator.streamlit.app/)
-
-Transcript GPA Simulator is a web application used to calculate the effects of adding and/or replacing courses on the student's grade point average and total credits earned.
-
-The application works by parsing university transcript PDF files into data tables that contain the completed courses and their results.
+[Web Application](https://transcript-gpa-simulator.streamlit.app/)
 
 
-Supported Transcripts:
+Parses university transcripts to return a dashboard and interface for course load forecasting.
 
-- [Testing, Stable] Trent University, Unofficial Transcript
+GPA calculations are based on each institution's [OSMAS](https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table) scale.
+
+
+
+## Features
+
+- Download a .csv report of your transcript.
+- Scatter plot and distribution chart for course grades.
+- Forecast your future GPA by adding additional courses to your transcript.
+- Forecast the effects of replacing credits on your transcript.
+- Full and half credits are supported.
+
+## Instructions
+
+- Download your transcript from your institution. 
+- Upload your transcript to the file uploader on the application.
+
+
+## Privacy
+
+- This application does not store any data remotely. 
+
+## Supported Institutions
+
+- Trent University, Unofficial Transcript ([Access Transcript from Self Service](https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table))
+
+
+
+
+## Errors?
+
+- Identical courses can carry different names, ex, "Calculus I" and "Calculus 1". If you have replaced a course on your transcript, and that course has been renamed by the institution, the original attempt may incorrectly remain in your GPA calculation. 
+
+Please report any instances of this to the developer, so the app can be updated.
